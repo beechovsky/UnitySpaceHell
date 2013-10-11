@@ -1,0 +1,80 @@
+/////////////////////////////////////////////////////////
+/// Meteoroid Class of axxelerator //////////////////////
+/// © 2011 Jeff Bucklew /////////////////////////////////
+/////////////////////////////////////////////////////////
+package  
+{
+	// imports
+	import flash.display.MovieClip;
+	import flash.events.Event;
+	import flash.utils.Timer;
+	import flash.events.TimerEvent;
+	
+	// create main class
+	public class Meteoroid extends MovieClip 
+	{
+		private var MaxX:Number;
+		private var MinX:Number;
+		public var vy:Number;
+		
+		// define constructor
+		public function Meteoroid():void
+		{
+			// set default properties
+			MaxX = 300;
+			MinX = 1;
+			vy = 0;
+			// add listener
+			this.addEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
+			this.addEventListener(Event.ENTER_FRAME, onEnterFrame);
+		}
+		
+		// define onAddedToStage Handler
+		private function onAddedToStage(e:Event):void
+		{
+			// dispatch the meteorCreated event
+			dispatchEvent(new Event("meteoroidCreated", true));
+			// add listeners
+			this.addEventListener(Event.REMOVED_FROM_STAGE, onRemovedFromStage);
+			// determine x and y position
+			this.x = Math.floor(Math.random() * (MaxX * MinX) + MinX);
+			this.y = 0 - (this.height * .5);
+			addEventListener("asteroidCollision", onAsteroidCollision);
+			addEventListener("meteoroidCollision", onMeteoroidCollision);
+		}
+		
+		private function onEnterFrame(e:Event):void
+		{
+			// move meteor
+			this.y += vy;
+			// rotate meteor
+			this.rotation += 23; 
+			// see if the meteor is off the bottom of the stage
+			if(this.y + (this.height * .5) > 500)
+			{
+				dispatchEvent(new Event("meteoroidRemoved", true));
+				parent.removeChild(this);
+			}
+		}
+		
+		// define onRemovedFromStage handler
+		private function onRemovedFromStage(e:Event):void
+		{
+			// remove listeners
+			this.removeEventListener(Event.ENTER_FRAME, onEnterFrame);
+			this.removeEventListener(Event.REMOVED_FROM_STAGE, onRemovedFromStage);
+			removeEventListener("asteroidCollision", onAsteroidCollision);
+			removeEventListener("meteoroidCollision", onMeteoroidCollision);
+		}
+		
+		public function onAsteroidCollision(event:Event):void
+		{
+			removeEventListener(Event.ENTER_FRAME, onEnterFrame);
+		}
+		
+		public function onMeteoroidCollision(event:Event):void
+		{
+			removeEventListener(Event.ENTER_FRAME, onEnterFrame);
+		}
+	}
+}
