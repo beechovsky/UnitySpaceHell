@@ -1,0 +1,123 @@
+//////////////////////////////////////////////////////////////////////////////
+///
+
+
+package 
+{
+	// import flash assets
+	import flash.display.MovieClip;
+	import flash.geom.Point;
+	
+	// declare class
+	public class Collision
+	{
+		// declare constructor function
+		public function Collision()
+		{
+			// This function has no code because no action is required
+			// when this class is created.  This class was designed to
+			// run specific functions when called directly from code.
+		}
+		
+		// declare block function (objectB blocks movement by objectA)
+		static public function block(objectA:MovieClip, objectB:MovieClip):void
+		{
+			// create variables for calculations
+			var objectA_Halfwidth:Number = objectA.width * .5;
+			var objectA_Halfheight:Number = objectA.height * .5;
+			var objectB_Halfwidth:Number = objectB.width * .5;
+			var objectB_Halfheight:Number = objectB.height * .5;
+			
+			// calculate distance and overlap on x-axis
+			var dx:Number = objectB.x - objectA.x;
+			var ox:Number = objectB_Halfwidth + objectA_Halfwidth - Math.abs(dx);
+			
+			// check for overlap on the x-axis
+			if (ox > 0)
+			{
+				// calculate distance and overlap on the y-axis
+				var dy:Number = objectA.y - objectB.y;
+				var oy:Number = objectB_Halfheight + objectA_Halfheight - Math.abs(dy);
+				
+				// check for overlap on the y-axis
+				if (oy > 0)
+				{
+					// see if overlap is greater on the x-axis or the y-axis
+					// make adjustments based on the axis with the least overlap
+					if (ox < oy)
+					{
+						// check for collision with right or left side
+						if (dx < 0)
+						{
+							// collision on right
+							oy = 0;
+						}
+						else
+						{
+							// collision on left
+							oy = 0;
+							ox *= -1;
+						}
+					}
+					else
+					{
+						// check for collision on the top or bottom side
+						if (dy < 0)
+						{
+							// collision on top
+							ox = 0;
+							oy *= -1;
+						}
+						else
+						{
+							// collision on bottom
+							ox = 0;
+						}
+					}
+					
+					// use the calculated x and y overlaps to 
+					// move objectA out of the collision
+					objectA.x += ox;
+					objectA.y += oy;
+				}
+			}
+		}
+		
+		// general purpose method for testing axis-based collisions
+		// returns true or false for collisions between objectA and objectB
+		static public function test(objectA:Object,objectB:Object):Boolean
+		{
+			// create local variables for calculations
+			var objectA_Halfwidth=objectA.width * .5
+			var objectA_Halfheight=objectA.height * .5;
+			var objectB_Halfwidth=objectB.width * .5;
+			var objectB_Halfheight=objectB.height * .5;
+			
+			// calculate distance and overlap on x-axis
+			var dx=objectB.x-objectA.x;
+			var ox=objectB_Halfwidth+objectA_Halfwidth-Math.abs(dx);
+			
+			// check for overlap on the x-axis
+			if (0 < ox)
+			{
+				// calculate distance and overlap on y-axis
+				var dy=objectA.y-objectB.y;
+				var oy=objectB_Halfheight+objectA_Halfheight-Math.abs(dy);
+				
+				// check for overlap on the y-axis
+				if (0 < oy)
+				{
+					// collision detected, return a value of true
+					return true;
+				}
+			}
+			else
+			{
+				// no collision detected, return a value of false
+				return false;
+			}
+			// no overlap was detected, return a value of false
+			return false;
+		}
+	}
+}
