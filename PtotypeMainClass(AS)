@@ -1,0 +1,170 @@
+/////////////////////////////////////////////////////////
+/// Document Class of axxelerator ///////////////////////
+/// © 2011 Jeff Bucklew /////////////////////////////////
+/////////////////////////////////////////////////////////
+package  
+{
+	import flash.display.MovieClip;
+	import TitleScreen;
+	import GameScreen;
+	import ControlScreen;
+	import CreditScreen;
+	import flash.events.MouseEvent;
+	import flash.events.KeyboardEvent;
+	import flash.events.Event;
+	import flash.net.URLRequest;
+	import flash.media.Sound;
+	import flash.media.SoundChannel;
+	import flash.utils.Timer;
+	import flash.events.TimerEvent;
+	
+	public class Axxelerator_Main extends MovieClip
+	{
+		var gameScreen:GameScreen;
+		var titleScreen:TitleScreen;
+		var controlScreen:ControlScreen;
+		var creditScreen:CreditScreen;
+		var _hitSoundReq:URLRequest = new URLRequest("hit.mp3");
+		var _hitSound:Sound = new Sound();
+		var _hitSoundChan:SoundChannel = new SoundChannel();
+		var _songSoundReq:URLRequest = new URLRequest("mainTheme.mp3");
+		var _songSound:Sound = new Sound();
+		var _songSoundChan:SoundChannel = new SoundChannel();
+		var endTimer:Timer;
+		
+		public function Axxelerator_Main() 
+		{
+			init();
+		}
+		
+		public function init():void 
+		{
+			
+			_hitSound.load(_hitSoundReq);
+			_songSound.load(_songSoundReq);
+			_songSoundChan = _songSound.play();
+			_songSoundChan.addEventListener(Event.SOUND_COMPLETE, loopTheme);
+			titleScreen = new TitleScreen;
+			addChild(titleScreen);
+			endTimer = new Timer(1500);
+			titleScreen.goButton.addEventListener(MouseEvent.CLICK, clickGO);
+			titleScreen.controlButton.addEventListener(MouseEvent.CLICK, clickControl);
+		}
+		
+		// Define loopTheme function
+		public function loopTheme(e:Event):void
+		{
+			_songSoundChan = _songSound.play();
+			trace("SONG LOOPED");
+		}
+		
+		public function clickGO(event:MouseEvent):void
+		{
+			removeChild(titleScreen);
+			titleScreen = null;
+			gameScreen = new GameScreen;
+			addChild(gameScreen);
+			addEventListener("asteroidCollision", onAsteroidCollision);
+			addEventListener("meteoroidCollision", onMeteoroidCollision);
+			addEventListener("victory", onVictory);
+			addEventListener("outOfGas", onOutOfGas);
+		}
+		
+		public function clickControl(event:MouseEvent):void
+		{
+			removeChild(titleScreen);
+			titleScreen = null;
+			controlScreen = new ControlScreen;
+			addChild(controlScreen);
+			controlScreen.playButton.addEventListener(MouseEvent.CLICK, clickPlay);
+		}
+		
+		public function clickPlay(event:MouseEvent):void
+		{
+			removeChild(controlScreen);
+			controlScreen = null;
+			gameScreen = new GameScreen;
+			addChild(gameScreen);
+			addEventListener("asteroidCollision", onAsteroidCollision);
+			addEventListener("meteoroidCollision", onMeteoroidCollision);
+			addEventListener("victory", onVictory);
+			addEventListener("outOfGas", onOutOfGas);
+		}
+		
+		public function onAsteroidCollision(event:Event):void
+		{
+			// CUE HIT SOUND
+			_hitSoundChan = _hitSound.play();
+			_songSoundChan.stop();
+			endTimer.addEventListener(TimerEvent.TIMER, endTime);
+			endTimer.start();
+		}
+		
+		public function onMeteoroidCollision(event:Event):void
+		{
+			// CUE HIT SOUND
+			_hitSoundChan = _hitSound.play();
+			_songSoundChan.stop();
+			endTimer.addEventListener(TimerEvent.TIMER, endTime);
+			endTimer.start();
+		}
+		
+		public function endTime(event:TimerEvent):void
+		{
+			endTimer.removeEventListener(TimerEvent.TIMER, endTime);
+			creditScreen = new CreditScreen;
+			removeChild(gameScreen);
+			gameScreen = null;
+			addChild(creditScreen);
+			creditScreen.creditTxt.text = "YOU SUCK!!!";
+			creditScreen.replayButton.addEventListener(MouseEvent.CLICK, clickReplay);
+			removeEventListener("asteroidCollision", onAsteroidCollision);
+			removeEventListener("meteoroidCollision", onMeteoroidCollision);
+			removeEventListener("victory", onVictory);
+			removeEventListener("outOfGas", onOutOfGas);
+		}
+		
+		public function onVictory(event:Event):void
+		{
+			creditScreen = new CreditScreen;
+			removeChild(gameScreen);
+			gameScreen = null;
+			addChild(creditScreen);
+			creditScreen.creditTxt.text = "YOU DID IT!!!";
+			creditScreen.replayButton.addEventListener(MouseEvent.CLICK, clickReplay);
+			removeEventListener("asteroidCollision", onAsteroidCollision);
+			removeEventListener("meteoroidCollision", onMeteoroidCollision);
+			removeEventListener("victory", onVictory);
+			removeEventListener("outOfGas", onOutOfGas);
+		}
+		
+		public function onOutOfGas(event:Event):void
+		{
+			creditScreen = new CreditScreen;
+			removeChild(gameScreen);
+			gameScreen = null;
+			addChild(creditScreen);
+			creditScreen.creditTxt.text = "YOU SUCK!!!";
+			creditScreen.replayButton.addEventListener(MouseEvent.CLICK, clickReplay);
+			removeEventListener("asteroidCollision", onAsteroidCollision);
+			removeEventListener("meteoroidCollision", onMeteoroidCollision);
+			removeEventListener("victory", onVictory);
+			removeEventListener("outOfGas", onOutOfGas);
+		}
+		
+		public function clickReplay(event:MouseEvent):void
+		{
+			removeChild(creditScreen);
+			creditScreen = null;
+			gameScreen = new GameScreen;
+			addChild(gameScreen);
+			//creditScreen.replayButton.removeEventListener(MouseEvent.CLICK, clickReplay);
+			addEventListener("asteroidCollision", onAsteroidCollision);
+			addEventListener("meteoroidCollision", onMeteoroidCollision);
+			addEventListener("victory", onVictory);
+			addEventListener("outOfGas", onOutOfGas);
+		}
+
+	}
+	
+}
