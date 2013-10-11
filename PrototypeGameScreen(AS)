@@ -1,0 +1,389 @@
+/////////////////////////////////////////////////////////
+/// Game Class of axxelerator ///////////////////////////
+/// © 2011 Jeff Bucklew /////////////////////////////////
+/////////////////////////////////////////////////////////
+package  
+{
+	// imports
+	import flash.display.MovieClip;
+	import flash.events.KeyboardEvent;
+	import flash.events.Event;
+	import flash.events.TimerEvent;
+	import flash.ui.Keyboard;
+	import Background;
+	import Player;
+	import Planet;
+	import Asteroid;
+	import Meteoroid;
+	import FuelBar;
+	import flash.utils.Timer;
+	
+	// class
+	public class GameScreen extends MovieClip
+	{
+		//var
+		var vx:int;
+		var vy:int;
+		var minVY:int;
+		var maxVY:int;
+		var planetVY:int;
+		var accelerate:Boolean;
+		var decelerate:Boolean;
+		var shotFired:Boolean;
+		var photons:Array;
+		var player:Player;
+		var radius:Number;
+		var photonSpeed:Number;
+		var background:Background;
+		var background2:Background;
+		var planet:Planet;
+		var asteroids:Array;
+		var asteroidTimer:Timer;
+		var meteoroids:Array;
+		var meteoroidTimer:Timer;
+		var fuelTimer:Timer;
+		var fuelBar:FuelBar;
+		
+		// constructor
+		public function GameScreen() 
+		{
+			init();
+		}
+		
+		// define init
+		public function init():void
+		{
+			// assign values and properties and add to display list if necessary
+			vx = 0;
+			minVY = 5;
+			maxVY = 25;
+			vy = 5;
+			radius = this.width * .5;
+			asteroids = new Array();
+			meteoroids = new Array();
+			photons = new Array();
+			accelerate = false;
+			decelerate = false;
+			shotFired = false;
+			planet = new Planet();
+			addChild(planet);
+			planet.x = 50;
+			planet.y = -1000;
+			planet.alpha = .6;
+			background = new Background();
+			addChild(background);
+			background2 = new Background();
+			addChild(background2);
+			player = new Player();
+			addChild(player);
+			player.x = 150;
+			player.y = 370;
+			fuelBar = new FuelBar();
+			addChild(fuelBar);
+			fuelBar.x = 15;
+			fuelBar.y = 470;
+			
+			// TIMERS
+			// Asteroid
+			asteroidTimer = new Timer(1000);
+			asteroidTimer.addEventListener(TimerEvent.TIMER, launchAsteroid);
+			// Meteoroid
+			meteoroidTimer = new Timer(2000);
+			meteoroidTimer.addEventListener(TimerEvent.TIMER, launchMeteor);
+			// fuel
+			fuelTimer = new Timer(1000);
+			fuelTimer.addEventListener(TimerEvent.TIMER, fuelTime);
+			
+			// listeners
+			addEventListener(Event.ADDED_TO_STAGE, onGameAdded);
+			addEventListener("photonCreated", onPhotonCreated);
+			addEventListener("photonRemoved", onPhotonRemoved);
+			addEventListener("asteroidCreated", onAsteroidCreated);
+			addEventListener("asteroidRemoved", onAsteroidRemoved);
+			addEventListener("meteoroidCreated", onMeteoroidCreated);
+			addEventListener("meteoroidRemoved", onMeteoroidRemoved);
+		}
+		
+		// define onGameAdded handler
+		public function onGameAdded(event:Event):void
+		{
+			// apply focus to the stage
+			stage.focus = stage;
+			addEventListener(Event.ENTER_FRAME, onEnterFrame);
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+			stage.addEventListener(KeyboardEvent.KEY_UP, onKeyUp);
+			addEventListener(Event.REMOVED_FROM_STAGE, onGameRemoved);
+			removeEventListener(Event.ADDED_TO_STAGE, onGameAdded);
+			asteroidTimer.start();
+			meteoroidTimer.start();
+			fuelTimer.start();
+		}
+		
+		// define onGameRemoved handler
+		public function onGameRemoved(event:Event):void
+		{
+			removeEventListener(Event.ENTER_FRAME, onEnterFrame);
+			stage.removeEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+			stage.removeEventListener(KeyboardEvent.KEY_UP, onKeyUp);
+			asteroidTimer.stop();
+			meteoroidTimer.stop();
+			fuelTimer.stop();
+		}
+		
+		// define onPhotonCreated handler
+		public function onPhotonCreated(e:Event):void
+		{
+			// store a reference to the Photon in the array
+			photons.push(MovieClip(e.target));
+		}
+		
+		// define onPhotonRemoved handler
+		public function onPhotonRemoved(e:Event):void
+		{
+			// loop through the photons
+			for (var i:Number = 0; i < photons.length; i++)
+			{
+				// see if this is the missing photon
+				if (photons[i] == MovieClip(e.target))
+				{
+					trace("photon removed");
+					// remove this photon from array
+					photons.splice(i, 1);
+					// update index
+					i--;
+				}
+			}
+		}
+		
+		// define onAsteroidCreated handler
+		public function onAsteroidCreated(e:Event):void
+		{
+			// store a reference to the asteroid in the array
+			asteroids.push(MovieClip(e.target));
+		}
+		
+		// define onAsteroidRemoved handler
+		public function onAsteroidRemoved(e:Event):void
+		{
+			// loop through the asteroids
+			for (var j:Number = 0; j < asteroids.length; j++)
+			{
+				// see if this is the missing asteroid
+				if (asteroids[j] == MovieClip(e.target))
+				{
+					trace("asteroid removed");
+					// remove this asteroid from array
+					asteroids.splice(j, 1);
+					// update index
+					j--;
+				}
+			}
+		}
+		
+		// define onMeteoroidCreated handler
+		public function onMeteoroidCreated(e:Event):void
+		{
+			// store a reference to the meteoroid in the array
+			meteoroids.push(MovieClip(e.target));
+		}
+		
+		// define onMeteoroidRemoved handler
+		public function onMeteoroidRemoved(e:Event):void
+		{
+			// loop through the meteoroids
+			for (var k:Number = 0; k < meteoroids.length; k++)
+			{
+				// see if this is the missing meteoroid
+				if (meteoroids[k] == MovieClip(e.target))
+				{
+					trace("meteoroid removed");
+					// remove this meteoroid from array
+					meteoroids.splice(k, 1);
+					// update index
+					k--;
+				}
+			}
+		}
+		
+		// define onKeyDown
+		public function onKeyDown(event:KeyboardEvent):void
+		{
+			// calculate the angle of the ship in radians
+			var _angle:Number = (player.rotation * Math.PI/180) - (.5* Math.PI);
+			
+			if (event.keyCode == Keyboard.LEFT)
+			{
+				vx = -10;
+			}
+			if (event.keyCode == Keyboard.RIGHT)
+			{
+				vx = 10;
+			}
+			if (event.keyCode == Keyboard.UP)
+			{
+				accelerate = true;
+			}
+			if (event.keyCode == Keyboard.DOWN)
+			{
+				decelerate = true;
+			}
+			/*if (event.keyCode == Keyboard.SPACE)
+			{
+				// cue shot sound
+				//_shotSoundChan = _shotSound.play();
+				
+				// see if a bullet is available
+				if (!shotFired)
+				{
+					// calculate the bullet's velocity on x and y
+					var _photon_Vx:Number = Math.cos(_angle) * photonSpeed;
+					var _photon_Vy:Number = Math.sin(_angle) * photonSpeed;
+					
+					// calculate bullet start position
+					var _photon_StartX:Number = (player.x + radius * Math.cos(_angle));
+					var _photon_StartY:Number = (player.y + radius * Math.sin(_angle) + 175);
+					
+					// actually create the bullet
+					var _photon_mc:Photon = new Photon(_photon_Vx, _photon_Vy, _photon_StartX, _photon_StartY);
+					parent.addChild(_photon_mc);
+					
+					shotFired = true;
+				}
+				else
+				{
+					shotFired = true;
+				}
+			}*/
+		}		
+		// define onKeyUp
+		public function onKeyUp(event:KeyboardEvent):void
+		{
+			if (event.keyCode == Keyboard.LEFT || event.keyCode == Keyboard.RIGHT)
+			{
+				vx = 0;
+			}
+			else if (event.keyCode == Keyboard.UP || event.keyCode == Keyboard.DOWN)
+			{
+				vy = vy;
+				accelerate = false;
+				decelerate = false;
+			}/*
+			else if (event.keyCode == Keyboard.SPACE)
+			{
+				shotFired = false;
+			}*/
+		}
+		
+		// define launchAsteroid handler
+		public function launchAsteroid(event:TimerEvent):void
+		{
+			var newAsteroid:Asteroid = new Asteroid();
+			addChild(newAsteroid);
+			//setChildIndex(newAsteroid, numChildren - 1);
+			asteroids.push(newAsteroid);
+			trace("Asteroid Launched!");
+		}
+		
+		// define launchMeteor handler
+		public function launchMeteor(event:TimerEvent):void
+		{
+			var newMeteoroid:Meteoroid = new Meteoroid();
+			addChild(newMeteoroid);
+			//setChildIndex(newAsteroid, numChildren - 1);
+			meteoroids.push(newMeteoroid);
+			trace("Meteoroid Launched!");
+		}
+		
+		// define fuelTime
+		public function fuelTime(event:TimerEvent):void
+		{
+			fuelBar.width -= 9;
+		}
+		
+		// define onEnterFrame
+		public function onEnterFrame(event:Event):void
+		{
+			// create local variables
+			var charHalfWidth:uint = player.width * .5;
+			
+			// move player 
+			player.x += vx;
+			
+			// move backgrounds
+			background.y += vy;
+			background2.y = background.y - 500;
+			
+			// move planet
+			planetVY = vy * .1;
+			planet.y += planetVY;
+			
+			// acceleration
+			if(accelerate && vy < maxVY)
+			{
+				vy += 1;
+				player.flame.y += 1;
+			}
+			else if(decelerate && vy > minVY)
+			{
+				vy -= 1;
+				player.flame.y -= 1;
+			}
+			
+			// set left/right borders for player
+			if(player.x + charHalfWidth > stage.stageWidth)
+			{
+				player.x = stage.stageWidth - charHalfWidth;
+			}
+			else if(player.x - charHalfWidth < 0)
+			{
+				player.x = 0 + charHalfWidth;
+			}
+			
+			// reposition backgrounds
+			if(background.y > 500)
+			{
+				background.y = 0;
+			}
+			
+			// loop through the asteroids
+			for (var l:Number = 0; l < asteroids.length; l++)
+			{
+				// move the asteroid
+				asteroids[l].y += vy * .3;
+				// collsion with player
+				if(asteroids[l].hitTestPoint(player.x, player.y, true))
+				{
+					removeEventListener(Event.ENTER_FRAME, onEnterFrame);
+					asteroids[l].gotoAndPlay(2);
+					dispatchEvent (new Event("asteroidCollision", true));
+				}
+			}
+			
+			// loop through the meteoroids
+			for (var m:Number = 0; m < meteoroids.length; m++)
+			{
+				// move the meteoroid
+				meteoroids[m].y += vy * .6;
+				// collsion with player
+				if(player.hitTestPoint(meteoroids[m].x, meteoroids[m].y, true))
+				{
+					removeEventListener(Event.ENTER_FRAME, onEnterFrame);
+					meteoroids[m].gotoAndPlay(2);
+					dispatchEvent (new Event("meteoroidCollision", true));
+				}
+			}
+			
+			// see if ship hits planet
+			if(player.hitTestPoint(planet.x, planet.y, true))
+			{
+				dispatchEvent (new Event("victory", true));
+			}
+			
+			// see if player runs out of fuel
+			if(fuelBar.width < 1)
+			{
+				dispatchEvent (new Event("outOfGas", true));
+			}
+		}
+	}
+}
