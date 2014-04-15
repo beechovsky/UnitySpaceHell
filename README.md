@@ -1,9 +1,9 @@
 UnitySpaceHell
 ==============
 
-Unity Space Hell Project
+Unity Space Hell Project - Protoype
 
-This is a game project, designed in Unity. It will be a top-down , "bullet-hell" focused on maneuvering a starship 
+This is a game project, protoyped here in Actionscript/Flash, that is currently being developed in Unity. It will be a top-down , "bullet-hell" focused on maneuvering a starship 
 around asteroids, alien weapons, and the like. Challenges include: a finite fuel supply, replenished only by reaching 
 planets/space stations; the aforementioned obstacles of space rocks(asteroids and meteroids) and hostile lifeforms; 
 mastery of the control system, a simple "swipe" system for both acceleration and banking left or right. 
